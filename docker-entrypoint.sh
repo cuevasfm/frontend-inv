@@ -20,6 +20,10 @@ echo ""
 echo "Configuración del proxy /api:"
 cat /etc/nginx/conf.d/default.conf | grep -A 15 "location /api"
 
+echo ""
+echo "IMPORTANTE: Request /api/health se proxea a $BACKEND_URL/health"
+echo "            (el /api/ se quita automáticamente)"
+
 # Probar configuración de nginx
 echo ""
 echo "Verificando configuración de nginx..."
