@@ -134,14 +134,6 @@ const Login = () => {
             >
               {loading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
             </Button>
-
-            <Box sx={{ mt: 2, p: 2, backgroundColor: 'grey.100', borderRadius: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                <strong>Usuario por defecto:</strong>
-              </Typography>
-              <Typography variant="body2">Usuario: admin</Typography>
-              <Typography variant="body2">Contraseña: admin123</Typography>
-            </Box>
           </Box>
         </Paper>
       </Container>
