@@ -35,6 +35,7 @@ import productTypeService from '../services/productTypeService';
 import ProductDialog from '../components/products/ProductDialog';
 import QuickStockDialog from '../components/products/QuickStockDialog';
 import DeleteConfirmDialog from '../components/common/DeleteConfirmDialog';
+import RestoreProductDialog from '../components/products/RestoreProductDialog';
 
 const Products = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -60,8 +61,10 @@ const Products = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [quickStockDialogOpen, setQuickStockDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [existingProduct, setExistingProduct] = useState(null);
+  const [deletedProduct, setDeletedProduct] = useState(null);
 
   // Cargar productos
   const loadProducts = async () => {
@@ -206,7 +209,39 @@ const Products = () => {
       setDialogOpen(false);
       loadProducts();
     } catch (error) {
+      // Detectar si es un producto eliminado
+      if (error.response?.status === 409 && error.response?.data?.error === 'PRODUCT_DELETED') {
+        setDeletedProduct(error.response.data.product);
+        setDialogOpen(false); // Cerrar diálogo de crear
+        setRestoreDialogOpen(true); // Abrir diálogo de restaurar
+        return;
+      }
       throw error;
+    }
+  };
+
+  // Restaurar producto eliminado
+  const handleRestore = async (product) => {
+    try {
+      await productService.restore(product.id);
+      enqueueSnackbar('Producto restaurado exitosamente', { variant: 'success' });
+      setRestoreDialogOpen(false);
+      setDeletedProduct(null);
+      loadProducts();
+      
+      // Abrir diálogo de ajuste de stock
+      setTimeout(() => {
+        const restoredProduct = products.find(p => p.id === product.id);
+        if (restoredProduct) {
+          setExistingProduct(restoredProduct);
+          setQuickStockDialogOpen(true);
+        }
+      }, 500);
+    } catch (error) {
+      enqueueSnackbar(
+        error.response?.data?.message || 'Error al restaurar producto',
+        { variant: 'error' }
+      );
     }
   };
 
@@ -648,6 +683,16 @@ const Products = () => {
         onConfirm={handleDelete}
         title="Eliminar Producto"
         message={`¿Estás seguro de que deseas eliminar el producto "${selectedProduct?.name}"?`}
+      />
+
+      <RestoreProductDialog
+        open={restoreDialogOpen}
+        onClose={() => {
+          setRestoreDialogOpen(false);
+          setDeletedProduct(null);
+        }}
+        product={deletedProduct}
+        onRestore={handleRestore}
       />
     </Box>
   );
