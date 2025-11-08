@@ -10,14 +10,17 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Sistema de Inventario - Licorería',
-        short_name: 'Inventario',
-        description: 'Sistema de gestión de inventario para licorería con PWA',
+        name: 'Licorería - Inventario',
+        short_name: 'Licorería',
+        description: 'Sistema de gestión de inventario para licorería con escaneo de códigos de barras',
         theme_color: '#1976d2',
         background_color: '#ffffff',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         start_url: '/',
+        scope: '/',
+        // Permisos para acceso a cámara
+        permissions: ['camera'],
         icons: [
           {
             src: '/icons/icon-72x72.png',
@@ -51,7 +54,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
         runtimeCaching: [
           {
-            urlPattern: /^http:\/\/localhost:3000\/api\/products/,
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/products'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'products-cache',
@@ -65,13 +68,24 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /^http:\/\/localhost:3000\/api\/mobile\/catalog/,
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/mobile/catalog'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'catalog-cache',
               expiration: {
                 maxEntries: 1,
                 maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              }
+            }
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200]
               }
             }
           }

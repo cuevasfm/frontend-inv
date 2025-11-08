@@ -27,9 +27,43 @@ const BarcodeScanner = ({ open, onClose, onScan }) => {
     };
   }, [open]);
 
+  const checkCameraPermissions = async () => {
+    try {
+      // Verificar si el navegador soporta getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Tu navegador no soporta acceso a la cámara');
+      }
+
+      // Solicitar permisos explícitamente
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      // Detener el stream temporal
+      stream.getTracks().forEach(track => track.stop());
+      
+      return true;
+    } catch (err) {
+      console.error('Error checking camera permissions:', err);
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        throw new Error('Permiso de cámara denegado. Ve a la configuración de tu navegador y permite el acceso a la cámara para este sitio.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        throw new Error('No se encontró ninguna cámara en tu dispositivo.');
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        throw new Error('La cámara está siendo usada por otra aplicación.');
+      } else {
+        throw new Error(err.message || 'No se pudo acceder a la cámara.');
+      }
+    }
+  };
+
   const startScanning = async () => {
     try {
       setError(null);
+
+      // Verificar y solicitar permisos primero
+      await checkCameraPermissions();
 
       // Crear instancia del escáner
       html5QrCodeRef.current = new Html5Qrcode('barcode-reader');
@@ -38,7 +72,9 @@ const BarcodeScanner = ({ open, onClose, onScan }) => {
       const config = {
         fps: 10,
         qrbox: { width: 250, height: 150 },
-        aspectRatio: 1.0
+        aspectRatio: 1.0,
+        disableFlip: false,
+        supportedScanTypes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] // Todos los tipos de códigos
       };
 
       // Iniciar escaneo
@@ -47,6 +83,7 @@ const BarcodeScanner = ({ open, onClose, onScan }) => {
         config,
         (decodedText, decodedResult) => {
           // Código escaneado exitosamente
+          console.log('Código escaneado:', decodedText);
           onScan(decodedText);
           stopScanning();
           onClose();
@@ -60,7 +97,7 @@ const BarcodeScanner = ({ open, onClose, onScan }) => {
       setScanning(true);
     } catch (err) {
       console.error('Error starting scanner:', err);
-      setError('No se pudo acceder a la cámara. Verifica los permisos.');
+      setError(err.message || 'No se pudo acceder a la cámara. Verifica los permisos.');
       setScanning(false);
     }
   };
