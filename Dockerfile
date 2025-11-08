@@ -7,14 +7,18 @@ WORKDIR /app
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci
+# Instalar dependencias (usar npm install si no hay package-lock.json)
+RUN npm install
 
 # Copiar el código fuente
 COPY . .
 
-# Build de producción
+# Build de producción con variables de entorno
+ENV NODE_ENV=production
 RUN npm run build
+
+# Verificar que el build se generó
+RUN ls -la /app/dist && echo "Build completado exitosamente"
 
 # Etapa 2: Servidor de producción con nginx
 FROM nginx:alpine
