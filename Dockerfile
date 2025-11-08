@@ -25,9 +25,13 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copiar configuración personalizada de nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Copiar script de entrada
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Exponer puerto
 EXPOSE 80
 
-# Comando para iniciar nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Usar script de entrada para configurar nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
