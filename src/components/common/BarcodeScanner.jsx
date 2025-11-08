@@ -16,9 +16,14 @@ const BarcodeScanner = ({ open, onClose, onScan }) => {
   const [error, setError] = useState(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
+  const isProcessingRef = useRef(false); // Para evitar múltiples escaneos
+  const lastScannedRef = useRef(''); // Para evitar duplicados
 
   useEffect(() => {
     if (open && !scanning) {
+      // Resetear flags al abrir
+      isProcessingRef.current = false;
+      lastScannedRef.current = '';
       startScanning();
     }
 
@@ -82,11 +87,28 @@ const BarcodeScanner = ({ open, onClose, onScan }) => {
         { facingMode: 'environment' }, // Usar cámara trasera
         config,
         (decodedText, decodedResult) => {
-          // Código escaneado exitosamente
+          // Evitar múltiples escaneos del mismo código
+          if (isProcessingRef.current) {
+            return; // Ya estamos procesando un código
+          }
+
+          // Evitar duplicados inmediatos
+          if (lastScannedRef.current === decodedText) {
+            return;
+          }
+
+          // Marcar como procesando
+          isProcessingRef.current = true;
+          lastScannedRef.current = decodedText;
+
           console.log('Código escaneado:', decodedText);
-          onScan(decodedText);
-          stopScanning();
-          onClose();
+
+          // Detener el escáner inmediatamente
+          stopScanning().then(() => {
+            // Llamar al callback después de detener
+            onScan(decodedText);
+            onClose();
+          });
         },
         (errorMessage) => {
           // Error al escanear (normal mientras busca código)
@@ -103,9 +125,11 @@ const BarcodeScanner = ({ open, onClose, onScan }) => {
   };
 
   const stopScanning = async () => {
-    if (html5QrCodeRef.current && scanning) {
+    if (html5QrCodeRef.current) {
       try {
-        await html5QrCodeRef.current.stop();
+        if (scanning) {
+          await html5QrCodeRef.current.stop();
+        }
         html5QrCodeRef.current.clear();
         html5QrCodeRef.current = null;
         setScanning(false);
@@ -113,6 +137,10 @@ const BarcodeScanner = ({ open, onClose, onScan }) => {
         console.error('Error stopping scanner:', err);
       }
     }
+    
+    // Resetear flags
+    isProcessingRef.current = false;
+    lastScannedRef.current = '';
   };
 
   const handleClose = () => {
