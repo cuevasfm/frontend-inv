@@ -13,9 +13,14 @@ RUN npm install
 # Copiar el código fuente
 COPY . .
 
-# Build de producción con variables de entorno
+# Variables de entorno para el build de Vite
+# IMPORTANTE: Las variables VITE_* se incrustan en el código durante el build
 ENV NODE_ENV=production
-RUN npm run build
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=$VITE_API_URL
+
+# Build de producción
+RUN echo "Building with VITE_API_URL=$VITE_API_URL" && npm run build
 
 # Verificar que el build se generó
 RUN ls -la /app/dist && echo "Build completado exitosamente"
