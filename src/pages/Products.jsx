@@ -77,15 +77,25 @@ const Products = () => {
         ...filters
       };
 
-      const data = await productService.getAll(params);
-      setProducts(data.products);
+      const response = await productService.getAll(params);
+      
+      // Validar que la respuesta tenga la estructura esperada
+      if (!response || !response.data) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
+      const data = response.data;
+      
+      setProducts(data.products || []);
       setPagination(prev => ({
         ...prev,
-        total: data.pagination.total
+        total: data.pagination?.total || 0
       }));
     } catch (error) {
+      console.error('Error loading products:', error);
+      setProducts([]);
       enqueueSnackbar(
-        error.message || 'Error al cargar productos',
+        error.response?.data?.message || error.message || 'Error al cargar productos',
         { variant: 'error' }
       );
     } finally {
