@@ -21,8 +21,8 @@ echo "Configuración del proxy /api:"
 cat /etc/nginx/conf.d/default.conf | grep -A 15 "location /api"
 
 echo ""
-echo "IMPORTANTE: Request /api/health se proxea a $BACKEND_URL/health"
-echo "            (el /api/ se quita automáticamente)"
+echo "IMPORTANTE: Request /api/auth/login se proxea a $BACKEND_URL/api/auth/login"
+echo "            (el /api/ se mantiene en el path)"
 
 # Verificar que los archivos HTML existan
 echo ""
