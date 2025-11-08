@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 // Crear instancia de axios con configuración base
+// En producción usa /api (proxy de nginx), en desarrollo usa localhost
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3000/api'),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -36,8 +37,9 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
+          const baseURL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3000/api');
           const response = await axios.post(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/auth/refresh`,
+            `${baseURL}/auth/refresh`,
             { refreshToken }
           );
 
