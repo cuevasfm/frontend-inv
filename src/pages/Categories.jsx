@@ -4,12 +4,21 @@ import {
   Button,
   Paper,
   Typography,
-  IconButton
+  IconButton,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  Fab,
+  useTheme,
+  useMediaQuery,
+  CircularProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Category as CategoryIcon
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import { useSnackbar } from 'notistack';
@@ -19,6 +28,8 @@ import DeleteConfirmDialog from '../components/common/DeleteConfirmDialog';
 
 const Categories = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -128,7 +139,78 @@ const Categories = () => {
     }
   ];
 
-  return (
+  // Vista móvil con tarjetas
+  const MobileView = () => (
+    <Box sx={{ pb: 10 }}>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : categories.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <CategoryIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary">
+            No hay categorías
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Toca el botón + para crear una nueva categoría
+          </Typography>
+        </Paper>
+      ) : (
+        <Grid container spacing={2}>
+          {categories.map((category) => (
+            <Grid item xs={12} key={category.id}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <CategoryIcon sx={{ mr: 1, color: 'primary.main' }} />
+                    <Typography variant="h6">
+                      {category.name}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {category.description || 'Sin descripción'}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+                  <IconButton
+                    onClick={() => handleEdit(category)}
+                    color="primary"
+                    size="large"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDeleteClick(category)}
+                    color="error"
+                    size="large"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+      
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16
+        }}
+        onClick={handleCreate}
+      >
+        <AddIcon />
+      </Fab>
+    </Box>
+  );
+
+  // Vista desktop con DataGrid
+  const DesktopView = () => (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">
@@ -156,6 +238,22 @@ const Categories = () => {
           }}
         />
       </Paper>
+    </Box>
+  );
+
+  return (
+    <Box>
+      {/* Header solo en móvil */}
+      {isMobile && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5">
+            Categorías
+          </Typography>
+        </Box>
+      )}
+
+      {/* Vista condicional */}
+      {isMobile ? <MobileView /> : <DesktopView />}
 
       <CategoryDialog
         open={dialogOpen}
