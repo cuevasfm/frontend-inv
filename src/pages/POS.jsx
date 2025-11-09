@@ -128,11 +128,15 @@ const POS = () => {
   // Agregar producto por código de barras
   const handleBarcodeScan = async (barcode) => {
     try {
-      console.log('Buscando producto con código:', barcode);
+      console.log('🔍 Buscando producto con código:', barcode);
       const response = await productService.getAll({ search: barcode, limit: 10, page: 1 });
-      console.log('Respuesta búsqueda por código:', response);
+      console.log('📦 Respuesta búsqueda por código:', response);
       
-      const products = response.products || [];
+      // Axios devuelve {data: {...}, status: 200, ...}
+      const data = response.data || response;
+      const products = data.products || [];
+      
+      console.log(`📋 Productos encontrados: ${products.length}`);
       const product = products.find(p => p.barcode === barcode);
 
       if (!product) {
@@ -146,9 +150,9 @@ const POS = () => {
       }
 
       addToCart(product);
-      enqueueSnackbar(`"${product.name}" agregado`, { variant: 'success' });
+      enqueueSnackbar(`✅ "${product.name}" agregado`, { variant: 'success' });
     } catch (error) {
-      console.error('Error al buscar producto por código:', error);
+      console.error('❌ Error al buscar producto por código:', error);
       enqueueSnackbar(error.error || error.message || 'Error al buscar producto', { variant: 'error' });
     }
   };
@@ -231,22 +235,26 @@ const POS = () => {
     try {
       console.log('Buscando productos con:', search);
       const response = await productService.getAll({ search, limit: 20, page: 1 });
-      console.log('Respuesta de búsqueda:', response);
+      console.log('Respuesta completa de búsqueda:', response);
       
-      // Verificar si la respuesta tiene la estructura correcta
-      if (response && response.products) {
-        setProducts(response.products);
-        console.log(`Encontrados ${response.products.length} productos`);
-      } else if (Array.isArray(response)) {
+      // Axios devuelve {data: {...}, status: 200, ...}
+      // Necesitamos acceder a response.data.products
+      const data = response.data || response;
+      console.log('Data extraída:', data);
+      
+      if (data && data.products && Array.isArray(data.products)) {
+        setProducts(data.products);
+        console.log(`✅ Encontrados ${data.products.length} productos:`, data.products.map(p => p.name));
+      } else if (Array.isArray(data)) {
         // Por si acaso el servicio devuelve directamente el array
-        setProducts(response);
-        console.log(`Encontrados ${response.length} productos (array directo)`);
+        setProducts(data);
+        console.log(`✅ Encontrados ${data.length} productos (array directo)`);
       } else {
-        console.warn('Respuesta inesperada:', response);
+        console.warn('❌ Estructura de respuesta inesperada:', data);
         setProducts([]);
       }
     } catch (error) {
-      console.error('Error al buscar productos:', error);
+      console.error('❌ Error al buscar productos:', error);
       enqueueSnackbar(error.error || error.message || 'Error al buscar productos', { variant: 'error' });
       setProducts([]);
     } finally {
