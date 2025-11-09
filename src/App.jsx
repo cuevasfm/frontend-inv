@@ -11,6 +11,7 @@ import Products from './pages/Products';
 import Categories from './pages/Categories';
 import Brands from './pages/Brands';
 import PriceList from './pages/PriceList';
+import POS from './pages/POS';
 import Reports from './pages/Reports';
 import Customers from './pages/Customers';
 import Users from './pages/Users';
@@ -63,7 +64,7 @@ function App() {
                 <Route path="categories" element={<Categories />} />
                 <Route path="brands" element={<Brands />} />
                 <Route path="price-list" element={<PriceList />} />
-                <Route path="pos" element={<div>POS (próximamente)</div>} />
+                <Route path="pos" element={<POS />} />
                 <Route path="customers" element={<Customers />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="settings/users" element={<Users />} />
