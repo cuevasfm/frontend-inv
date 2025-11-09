@@ -196,14 +196,14 @@ const Sales = () => {
               #{sale.id}
             </Typography>
             <Chip 
-              label={getStatusLabel(sale.status)} 
+              label={getStatusLabel(sale.paymentStatus)} 
               size="small" 
-              color={getStatusColor(sale.status)}
+              color={getStatusColor(sale.paymentStatus)}
             />
           </Box>
           
           <Typography variant="h6" gutterBottom>
-            {formatCurrency(sale.total)}
+            {formatCurrency(sale.totalAmount)}
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
@@ -216,7 +216,7 @@ const Sales = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <EventNote sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
             <Typography variant="caption" color="textSecondary">
-              {formatDate(sale.createdAt)}
+              {formatDate(sale.created_at)}
             </Typography>
           </Box>
 
@@ -226,9 +226,9 @@ const Sales = () => {
               size="small" 
               variant="outlined"
             />
-            {sale.itemCount && (
+            {sale.items && (
               <Chip 
-                label={`${sale.itemCount} productos`} 
+                label={`${sale.items.length} productos`} 
                 size="small" 
                 variant="outlined"
               />
@@ -244,7 +244,7 @@ const Sales = () => {
             >
               Ver Detalles
             </Button>
-            {sale.status === 'completed' && (
+            {sale.paymentStatus === 'paid' && (
               <Button
                 size="small"
                 color="error"
@@ -395,7 +395,7 @@ const Sales = () => {
                   sales.map((sale) => (
                     <TableRow key={sale.id} hover>
                       <TableCell>#{sale.id}</TableCell>
-                      <TableCell>{formatDate(sale.createdAt)}</TableCell>
+                      <TableCell>{formatDate(sale.created_at)}</TableCell>
                       <TableCell>
                         {sale.customer 
                           ? `${sale.customer.firstName} ${sale.customer.lastName}`
@@ -411,14 +411,14 @@ const Sales = () => {
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {formatCurrency(sale.total)}
+                          {formatCurrency(sale.totalAmount)}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Chip 
-                          label={getStatusLabel(sale.status)} 
+                          label={getStatusLabel(sale.paymentStatus)} 
                           size="small" 
-                          color={getStatusColor(sale.status)}
+                          color={getStatusColor(sale.paymentStatus)}
                         />
                       </TableCell>
                       <TableCell align="center">
@@ -429,7 +429,7 @@ const Sales = () => {
                         >
                           <Visibility />
                         </IconButton>
-                        {sale.status === 'completed' && (
+                        {sale.paymentStatus === 'paid' && (
                           <IconButton
                             size="small"
                             color="error"
@@ -489,7 +489,7 @@ const Sales = () => {
                     Fecha
                   </Typography>
                   <Typography variant="body1">
-                    {formatDate(selectedSale.createdAt)}
+                    {formatDate(selectedSale.created_at)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -497,9 +497,9 @@ const Sales = () => {
                     Estado
                   </Typography>
                   <Chip 
-                    label={getStatusLabel(selectedSale.status)} 
+                    label={getStatusLabel(selectedSale.paymentStatus)} 
                     size="small" 
-                    color={getStatusColor(selectedSale.status)}
+                    color={getStatusColor(selectedSale.paymentStatus)}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -551,20 +551,20 @@ const Sales = () => {
                   <Typography>Subtotal:</Typography>
                   <Typography>{formatCurrency(selectedSale.subtotal)}</Typography>
                 </Box>
-                {selectedSale.discount > 0 && (
+                {selectedSale.discountAmount > 0 && (
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography color="error">Descuento:</Typography>
-                    <Typography color="error">-{formatCurrency(selectedSale.discount)}</Typography>
+                    <Typography color="error">-{formatCurrency(selectedSale.discountAmount)}</Typography>
                   </Box>
                 )}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                   <Typography variant="h6">Total:</Typography>
-                  <Typography variant="h6">{formatCurrency(selectedSale.total)}</Typography>
+                  <Typography variant="h6">{formatCurrency(selectedSale.totalAmount)}</Typography>
                 </Box>
               </Box>
 
               {/* Información de Cancelación */}
-              {selectedSale.status === 'cancelled' && selectedSale.cancelledReason && (
+              {selectedSale.paymentStatus === 'cancelled' && selectedSale.notes && selectedSale.notes.includes('[CANCELADA]') && (
                 <>
                   <Divider sx={{ my: 2 }} />
                   <Alert severity="error">
