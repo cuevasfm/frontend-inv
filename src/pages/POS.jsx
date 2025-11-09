@@ -76,6 +76,8 @@ const POS = () => {
   const [customers, setCustomers] = useState([]);
   const [customerSearch, setCustomerSearch] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchingProducts, setSearchingProducts] = useState(false);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
 
   // Pago
   const [paidAmount, setPaidAmount] = useState('');
@@ -220,27 +222,32 @@ const POS = () => {
       return;
     }
 
-    setLoading(true);
+    setSearchingProducts(true);
     try {
       const response = await productService.getAll({ search, limit: 20 });
       setProducts(response.products || []);
     } catch (error) {
       enqueueSnackbar('Error al buscar productos', { variant: 'error' });
     } finally {
-      setLoading(false);
+      setSearchingProducts(false);
     }
   };
 
   // Buscar clientes
   const searchCustomers = async (search) => {
-    setLoading(true);
+    if (!search || search.length < 2) {
+      setCustomers([]);
+      return;
+    }
+
+    setSearchingCustomers(true);
     try {
       const response = await customerService.getAll({ search, limit: 20, page: 1 });
       setCustomers(response.customers || []);
     } catch (error) {
       enqueueSnackbar('Error al buscar clientes', { variant: 'error' });
     } finally {
-      setLoading(false);
+      setSearchingCustomers(false);
     }
   };
 
@@ -479,22 +486,48 @@ const POS = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <BarcodeScanner
-            onScan={handleBarcodeScan}
-            onError={(error) => enqueueSnackbar(error, { variant: 'error' })}
-          />
+          <Box sx={{ minHeight: 400, display: 'flex', flexDirection: 'column' }}>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Apunta la cámara al código de barras del producto
+            </Alert>
+            <BarcodeScanner
+              onScan={handleBarcodeScan}
+              onError={(error) => enqueueSnackbar(error, { variant: 'error' })}
+            />
+          </Box>
         </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setScannerOpen(false)}>
+            Cancelar
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Diálogo: Buscar Producto */}
       <Dialog
         open={productSearchOpen}
-        onClose={() => setProductSearchOpen(false)}
+        onClose={() => {
+          setProductSearchOpen(false);
+          setProductSearch('');
+          setProducts([]);
+        }}
         fullScreen={isMobile}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Buscar Producto</DialogTitle>
+        <DialogTitle>
+          Buscar Producto
+          <IconButton
+            onClick={() => {
+              setProductSearchOpen(false);
+              setProductSearch('');
+              setProducts([]);
+            }}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <ClearIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
@@ -514,36 +547,82 @@ const POS = () => {
               )
             }}
           />
-          <List>
-            {products.map((product) => (
-              <ListItem
-                key={product.id}
-                button
-                onClick={() => {
-                  addToCart(product);
-                  setProductSearchOpen(false);
-                  setProductSearch('');
-                }}
-              >
-                <ListItemText
-                  primary={product.name}
-                  secondary={`${formatCurrency(product.retailPrice)} • Stock: ${product.currentStock}`}
-                />
-              </ListItem>
-            ))}
-          </List>
+          {searchingProducts ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : products.length > 0 ? (
+            <List>
+              {products.map((product) => (
+                <ListItem
+                  key={product.id}
+                  button
+                  onClick={() => {
+                    addToCart(product);
+                    setProductSearchOpen(false);
+                    setProductSearch('');
+                    setProducts([]);
+                  }}
+                >
+                  <ListItemText
+                    primary={product.name}
+                    secondary={`${formatCurrency(product.retailPrice)} • Stock: ${product.currentStock}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : productSearch.length >= 2 ? (
+            <Box sx={{ textAlign: 'center', py: 3 }}>
+              <Typography variant="body2" color="textSecondary">
+                No se encontraron productos
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 3 }}>
+              <Typography variant="body2" color="textSecondary">
+                Escribe al menos 2 caracteres para buscar
+              </Typography>
+            </Box>
+          )}
         </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setProductSearchOpen(false);
+              setProductSearch('');
+              setProducts([]);
+            }}
+          >
+            Cancelar
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Diálogo: Seleccionar Cliente */}
       <Dialog
         open={customerSelectOpen}
-        onClose={() => setCustomerSelectOpen(false)}
+        onClose={() => {
+          setCustomerSelectOpen(false);
+          setCustomerSearch('');
+          setCustomers([]);
+        }}
         fullScreen={isMobile}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Seleccionar Cliente (Opcional)</DialogTitle>
+        <DialogTitle>
+          Seleccionar Cliente (Opcional)
+          <IconButton
+            onClick={() => {
+              setCustomerSelectOpen(false);
+              setCustomerSearch('');
+              setCustomers([]);
+            }}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <ClearIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
@@ -556,25 +635,55 @@ const POS = () => {
             autoFocus
             sx={{ mb: 2, mt: 1 }}
           />
-          <List>
-            {customers.map((cust) => (
-              <ListItem
-                key={cust.id}
-                button
-                onClick={() => {
-                  setCustomer(cust);
-                  setCustomerSelectOpen(false);
-                  setCustomerSearch('');
-                }}
-              >
-                <ListItemText
-                  primary={cust.customerType === 'business' ? cust.companyName : `${cust.firstName} ${cust.lastName}`}
-                  secondary={cust.email || cust.phone}
-                />
-              </ListItem>
-            ))}
-          </List>
+          {searchingCustomers ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : customers.length > 0 ? (
+            <List>
+              {customers.map((cust) => (
+                <ListItem
+                  key={cust.id}
+                  button
+                  onClick={() => {
+                    setCustomer(cust);
+                    setCustomerSelectOpen(false);
+                    setCustomerSearch('');
+                    setCustomers([]);
+                  }}
+                >
+                  <ListItemText
+                    primary={cust.customerType === 'business' ? cust.companyName : `${cust.firstName} ${cust.lastName}`}
+                    secondary={cust.email || cust.phone}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : customerSearch.length >= 2 ? (
+            <Box sx={{ textAlign: 'center', py: 3 }}>
+              <Typography variant="body2" color="textSecondary">
+                No se encontraron clientes
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 3 }}>
+              <Typography variant="body2" color="textSecondary">
+                Escribe al menos 2 caracteres para buscar
+              </Typography>
+            </Box>
+          )}
         </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setCustomerSelectOpen(false);
+              setCustomerSearch('');
+              setCustomers([]);
+            }}
+          >
+            Cancelar
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Diálogo: Pago */}
