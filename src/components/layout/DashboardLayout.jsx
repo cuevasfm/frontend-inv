@@ -34,7 +34,8 @@ import {
   ExpandLess,
   ExpandMore,
   ManageAccounts as UsersIcon,
-  History as HistoryIcon
+  History as HistoryIcon,
+  ShoppingCart as SalesIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 
@@ -47,6 +48,7 @@ const menuItems = [
   { text: 'Marcas', icon: <BrandIcon />, path: '/brands' },
   { text: 'Listas de Precios', icon: <PriceListIcon />, path: '/price-list' },
   { text: 'Punto de Venta', icon: <POSIcon />, path: '/pos' },
+  { text: 'Ventas', icon: <SalesIcon />, path: '/sales' },
   { text: 'Clientes', icon: <PeopleIcon />, path: '/customers' },
   { text: 'Reportes', icon: <ReportsIcon />, path: '/reports' }
 ];

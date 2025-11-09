@@ -38,6 +38,7 @@ import { useSnackbar } from 'notistack';
 import reportService from '../services/reportService';
 import customerService from '../services/customerService';
 import auditLogService from '../services/auditLogService';
+import saleService from '../services/saleService';
 
 const StatCard = ({ title, value, subtitle, icon, color, trend, loading }) => (
   <Paper
@@ -109,7 +110,8 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     inventory: null,
     customers: null,
-    recentActivity: []
+    recentActivity: [],
+    sales: null
   });
 
   useEffect(() => {
@@ -120,16 +122,18 @@ const Dashboard = () => {
     setLoading(true);
     try {
       // Cargar datos en paralelo
-      const [inventoryData, customersData, activityData] = await Promise.all([
+      const [inventoryData, customersData, activityData, salesData] = await Promise.all([
         reportService.getInventoryReport().catch(() => null),
         customerService.getAll({ page: 1, limit: 1 }).catch(() => ({ pagination: { total: 0 } })),
-        auditLogService.getAll({ page: 1, limit: 10 }).catch(() => ({ logs: [] }))
+        auditLogService.getAll({ page: 1, limit: 10 }).catch(() => ({ logs: [] })),
+        saleService.getSummary().catch(() => null)
       ]);
 
       setDashboardData({
         inventory: inventoryData,
         customers: customersData,
-        recentActivity: activityData.logs || []
+        recentActivity: activityData.logs || [],
+        sales: salesData?.data || null
       });
     } catch (error) {
       console.error('Error al cargar dashboard:', error);
@@ -415,28 +419,82 @@ const Dashboard = () => {
           </Paper>
         </Grid>
 
-        {/* Sección: Preparado para Gráficas Futuras */}
+        {/* Sección: Resumen de Ventas */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2.5, height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <ShowChart sx={{ mr: 1, color: 'success.main' }} />
-              <Typography variant="h6">Ventas (Próximamente)</Typography>
+              <Typography variant="h6">Ventas</Typography>
             </Box>
             <Divider sx={{ mb: 2 }} />
-            <Box sx={{ textAlign: 'center', py: 5 }}>
-              <BarChart sx={{ fontSize: 80, color: 'action.disabled', mb: 2 }} />
-              <Typography variant="h6" color="textSecondary" gutterBottom>
-                Gráficas de Ventas
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Aquí se mostrarán las estadísticas de ventas cuando el módulo de Punto de Venta esté implementado
-              </Typography>
-              <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Chip label="Ventas por día" size="small" variant="outlined" />
-                <Chip label="Productos top" size="small" variant="outlined" />
-                <Chip label="Tendencias" size="small" variant="outlined" />
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                <CircularProgress size={30} />
               </Box>
-            </Box>
+            ) : dashboardData.sales ? (
+              <Box>
+                {/* Ventas de Hoy */}
+                <Box sx={{ mb: 2, p: 2, bgcolor: 'success.light', borderRadius: 2 }}>
+                  <Typography variant="subtitle2" color="success.dark" gutterBottom>
+                    Ventas de Hoy
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                    {formatCurrency(dashboardData.sales.todaySales || 0)}
+                  </Typography>
+                  <Typography variant="caption" color="success.dark">
+                    {dashboardData.sales.todayCount || 0} transacciones
+                  </Typography>
+                </Box>
+
+                {/* Ventas de la Semana */}
+                <Box sx={{ mb: 2, p: 2, bgcolor: 'info.light', borderRadius: 2 }}>
+                  <Typography variant="subtitle2" color="info.dark" gutterBottom>
+                    Ventas de la Semana
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'info.dark' }}>
+                    {formatCurrency(dashboardData.sales.weekSales || 0)}
+                  </Typography>
+                  <Typography variant="caption" color="info.dark">
+                    {dashboardData.sales.weekCount || 0} transacciones
+                  </Typography>
+                </Box>
+
+                {/* Ventas del Mes */}
+                <Box sx={{ p: 2, bgcolor: 'warning.light', borderRadius: 2 }}>
+                  <Typography variant="subtitle2" color="warning.dark" gutterBottom>
+                    Ventas del Mes
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'warning.dark' }}>
+                    {formatCurrency(dashboardData.sales.monthSales || 0)}
+                  </Typography>
+                  <Typography variant="caption" color="warning.dark">
+                    {dashboardData.sales.monthCount || 0} transacciones
+                  </Typography>
+                </Box>
+
+                {/* Promedio */}
+                {dashboardData.sales.todayCount > 0 && (
+                  <Box sx={{ mt: 2, p: 1.5, bgcolor: 'grey.100', borderRadius: 2, textAlign: 'center' }}>
+                    <Typography variant="caption" color="textSecondary">
+                      Ticket Promedio Hoy
+                    </Typography>
+                    <Typography variant="h6" color="primary">
+                      {formatCurrency(dashboardData.sales.todaySales / dashboardData.sales.todayCount)}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 5 }}>
+                <BarChart sx={{ fontSize: 80, color: 'action.disabled', mb: 2 }} />
+                <Typography variant="h6" color="textSecondary" gutterBottom>
+                  Sin ventas registradas
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Aún no hay ventas en el sistema
+                </Typography>
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>
