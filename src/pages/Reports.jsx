@@ -15,7 +15,15 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip
+  Chip,
+  useTheme,
+  useMediaQuery,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  List,
+  ListItem,
+  ListItemText
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -24,13 +32,16 @@ import {
   Warning as WarningIcon,
   Category as CategoryIcon,
   Storefront as BrandIcon,
-  AttachMoney as MoneyIcon
+  AttachMoney as MoneyIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import reportService from '../services/reportService';
 
 const Reports = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
 
@@ -76,7 +87,181 @@ const Reports = () => {
     );
   }
 
-  return (
+  // Vista móvil optimizada
+  const MobileView = () => (
+    <Box>
+      {/* Header móvil */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h5">
+            Reporte de Inventario
+          </Typography>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={loadReport}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={20} /> : <RefreshIcon />}
+          </Button>
+        </Box>
+        <Typography variant="caption" color="text.secondary">
+          {reportData && formatDate(reportData.generatedAt)}
+        </Typography>
+      </Box>
+
+      {reportData && (
+        <>
+          {/* Resumen compacto */}
+          <Grid container spacing={1.5} sx={{ mb: 2 }}>
+            <Grid item xs={6}>
+              <Card>
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                  <Typography variant="h6" color="primary">{reportData.summary.totalProducts}</Typography>
+                  <Typography variant="caption" color="text.secondary">Productos</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6}>
+              <Card>
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                  <Typography variant="h6" color="primary">{reportData.summary.totalItems.toLocaleString()}</Typography>
+                  <Typography variant="caption" color="text.secondary">Items</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12}>
+              <Card sx={{ backgroundColor: '#e8f5e9' }}>
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                  <Typography variant="h6" color="success.main">
+                    {formatCurrency(reportData.summary.potentialProfit)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Ganancia Potencial ({reportData.summary.profitMargin}% margen)
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6}>
+              <Card sx={{ backgroundColor: reportData.summary.lowStockProducts > 0 ? '#fff3e0' : '#f5f5f5' }}>
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                  <Typography variant="h6">{reportData.summary.lowStockProducts}</Typography>
+                  <Typography variant="caption" color="text.secondary">Bajo Stock</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6}>
+              <Card sx={{ backgroundColor: reportData.summary.outOfStockProducts > 0 ? '#ffebee' : '#f5f5f5' }}>
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                  <Typography variant="h6">{reportData.summary.outOfStockProducts}</Typography>
+                  <Typography variant="caption" color="text.secondary">Sin Stock</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+
+          {/* Categorías - Accordion */}
+          <Accordion sx={{ mb: 2 }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <CategoryIcon sx={{ mr: 1 }} />
+                <Typography>Por Categorías ({reportData.categoryStats.length})</Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0 }}>
+              <List dense>
+                {reportData.categoryStats.map((cat, index) => (
+                  <ListItem key={index} divider>
+                    <ListItemText
+                      primary={cat.category}
+                      secondary={
+                        <Box>
+                          <Typography variant="caption" display="block">
+                            Productos: {cat.count} | Stock: {cat.totalStock.toLocaleString()}
+                          </Typography>
+                          <Typography variant="caption" display="block" color="success.main">
+                            Ganancia: {formatCurrency(cat.profit)}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Marcas - Accordion */}
+          <Accordion sx={{ mb: 2 }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <BrandIcon sx={{ mr: 1 }} />
+                <Typography>Top 10 Marcas ({reportData.brandStats.length})</Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0 }}>
+              <List dense>
+                {reportData.brandStats.map((brand, index) => (
+                  <ListItem key={index} divider>
+                    <ListItemText
+                      primary={brand.brand}
+                      secondary={
+                        <Box>
+                          <Typography variant="caption" display="block">
+                            Productos: {brand.count} | Stock: {brand.totalStock.toLocaleString()}
+                          </Typography>
+                          <Typography variant="caption" display="block" color="success.main">
+                            Ganancia: {formatCurrency(brand.profit)}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Top Productos - Accordion */}
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <MoneyIcon sx={{ mr: 1 }} />
+                <Typography>Top 20 Productos ({reportData.topValueProducts.length})</Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0 }}>
+              <List dense>
+                {reportData.topValueProducts.map((product) => (
+                  <ListItem key={product.id} divider>
+                    <ListItemText
+                      primary={product.name}
+                      secondary={
+                        <Box>
+                          <Typography variant="caption" display="block">
+                            {product.category} | {product.brand}
+                          </Typography>
+                          <Typography variant="caption" display="block">
+                            Stock: {product.currentStock} | Valor: {formatCurrency(product.totalRetailValue)}
+                          </Typography>
+                          <Typography variant="caption" display="block" color="success.main">
+                            Ganancia: {formatCurrency(product.potentialProfit)}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </AccordionDetails>
+          </Accordion>
+        </>
+      )}
+    </Box>
+  );
+
+  // Vista desktop original
+  const DesktopView = () => (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">
@@ -352,6 +537,12 @@ const Reports = () => {
           </Paper>
         </>
       )}
+    </Box>
+  );
+
+  return (
+    <Box sx={{ p: isMobile ? 2 : 3 }}>
+      {isMobile ? <MobileView /> : <DesktopView />}
     </Box>
   );
 };

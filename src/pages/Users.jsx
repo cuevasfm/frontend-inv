@@ -6,13 +6,25 @@ import {
   Paper,
   Typography,
   IconButton,
-  Chip
+  Chip,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  Fab,
+  useTheme,
+  useMediaQuery,
+  CircularProgress,
+  InputAdornment
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  AccountCircle as AccountIcon
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import { useSnackbar } from 'notistack';
@@ -22,6 +34,8 @@ import DeleteConfirmDialog from '../components/common/DeleteConfirmDialog';
 
 const Users = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -201,7 +215,128 @@ const Users = () => {
     }
   ];
 
-  return (
+  // Vista móvil con tarjetas
+  const MobileView = () => (
+    <Box sx={{ pb: 10 }}>
+      {/* Búsqueda móvil */}
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          placeholder="Buscar usuarios..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          size="small"
+          fullWidth
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            )
+          }}
+        />
+      </Box>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : users.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <PersonIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary">
+            No hay usuarios
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Toca el botón + para crear un nuevo usuario
+          </Typography>
+        </Paper>
+      ) : (
+        <Grid container spacing={2}>
+          {users.map((user) => {
+            const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+            
+            return (
+              <Grid item xs={12} key={user.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                        <PersonIcon sx={{ mr: 1, color: 'primary.main' }} />
+                        <Box>
+                          <Typography variant="h6">
+                            {fullName || user.username}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                            <AccountIcon sx={{ fontSize: 14, mr: 0.5, color: 'text.secondary' }} />
+                            <Typography variant="caption" color="text.secondary">
+                              @{user.username}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                      <Chip
+                        label={user.isActive ? 'Activo' : 'Inactivo'}
+                        color={user.isActive ? 'success' : 'default'}
+                        size="small"
+                      />
+                    </Box>
+
+                    <Chip
+                      label={getRoleLabel(user.role)}
+                      color={getRoleColor(user.role)}
+                      size="small"
+                      sx={{ mb: 1.5 }}
+                    />
+
+                    {user.email && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                        <EmailIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {user.email}
+                        </Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+                    <IconButton
+                      onClick={() => handleEdit(user)}
+                      color="primary"
+                      size="large"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDeleteClick(user)}
+                      color="error"
+                      size="large"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+      )}
+      
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16
+        }}
+        onClick={handleAddNew}
+      >
+        <AddIcon />
+      </Fab>
+    </Box>
+  );
+
+  // Vista desktop con DataGrid
+  const DesktopView = () => (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">
@@ -256,6 +391,22 @@ const Users = () => {
           }}
         />
       </Paper>
+    </Box>
+  );
+
+  return (
+    <Box>
+      {/* Header solo en móvil */}
+      {isMobile && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5">
+            Usuarios
+          </Typography>
+        </Box>
+      )}
+
+      {/* Vista condicional */}
+      {isMobile ? <MobileView /> : <DesktopView />}
 
       <UserDialog
         open={dialogOpen}
