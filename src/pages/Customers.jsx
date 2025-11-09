@@ -6,13 +6,26 @@ import {
   Paper,
   Typography,
   IconButton,
-  Chip
+  Chip,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  Fab,
+  useTheme,
+  useMediaQuery,
+  CircularProgress,
+  InputAdornment
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Person as PersonIcon,
+  Business as BusinessIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import { useSnackbar } from 'notistack';
@@ -22,6 +35,8 @@ import DeleteConfirmDialog from '../components/common/DeleteConfirmDialog';
 
 const Customers = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -199,7 +214,141 @@ const Customers = () => {
     }
   ];
 
-  return (
+  // Vista móvil con tarjetas
+  const MobileView = () => (
+    <Box sx={{ pb: 10 }}>
+      {/* Búsqueda móvil */}
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          placeholder="Buscar clientes..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          size="small"
+          fullWidth
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            )
+          }}
+        />
+      </Box>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : customers.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <PersonIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary">
+            No hay clientes
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Toca el botón + para crear un nuevo cliente
+          </Typography>
+        </Paper>
+      ) : (
+        <Grid container spacing={2}>
+          {customers.map((customer) => {
+            const name = customer.customerType === 'business'
+              ? customer.companyName
+              : `${customer.firstName || ''} ${customer.lastName || ''}`.trim();
+            
+            return (
+              <Grid item xs={12} key={customer.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                        {customer.customerType === 'business' ? (
+                          <BusinessIcon sx={{ mr: 1, color: 'primary.main' }} />
+                        ) : (
+                          <PersonIcon sx={{ mr: 1, color: 'primary.main' }} />
+                        )}
+                        <Typography variant="h6">
+                          {name}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={customer.isActive ? 'Activo' : 'Inactivo'}
+                        color={customer.isActive ? 'success' : 'default'}
+                        size="small"
+                      />
+                    </Box>
+
+                    <Chip
+                      label={customer.customerType === 'business' ? 'Empresa' : 'Individual'}
+                      color={customer.customerType === 'business' ? 'primary' : 'default'}
+                      size="small"
+                      sx={{ mb: 2 }}
+                    />
+
+                    {customer.phone && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                        <PhoneIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {customer.phone}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {customer.email && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                        <EmailIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {customer.email}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {(customer.municipality || customer.state) && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        {[customer.municipality, customer.state].filter(Boolean).join(', ')}
+                      </Typography>
+                    )}
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+                    <IconButton
+                      onClick={() => handleEdit(customer)}
+                      color="primary"
+                      size="large"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDeleteClick(customer)}
+                      color="error"
+                      size="large"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
+      )}
+      
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16
+        }}
+        onClick={handleAddNew}
+      >
+        <AddIcon />
+      </Fab>
+    </Box>
+  );
+
+  // Vista desktop con DataGrid
+  const DesktopView = () => (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">
@@ -254,6 +403,22 @@ const Customers = () => {
           }}
         />
       </Paper>
+    </Box>
+  );
+
+  return (
+    <Box>
+      {/* Header solo en móvil */}
+      {isMobile && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5">
+            Clientes
+          </Typography>
+        </Box>
+      )}
+
+      {/* Vista condicional */}
+      {isMobile ? <MobileView /> : <DesktopView />}
 
       <CustomerDialog
         open={dialogOpen}

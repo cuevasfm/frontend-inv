@@ -4,12 +4,21 @@ import {
   Button,
   Paper,
   Typography,
-  IconButton
+  IconButton,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  Fab,
+  useTheme,
+  useMediaQuery,
+  CircularProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  LocalOffer as BrandIcon
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import { useSnackbar } from 'notistack';
@@ -19,6 +28,8 @@ import DeleteConfirmDialog from '../components/common/DeleteConfirmDialog';
 
 const Brands = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -128,7 +139,78 @@ const Brands = () => {
     }
   ];
 
-  return (
+  // Vista móvil con tarjetas
+  const MobileView = () => (
+    <Box sx={{ pb: 10 }}>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : brands.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <BrandIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary">
+            No hay marcas
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Toca el botón + para crear una nueva marca
+          </Typography>
+        </Paper>
+      ) : (
+        <Grid container spacing={2}>
+          {brands.map((brand) => (
+            <Grid item xs={12} key={brand.id}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <BrandIcon sx={{ mr: 1, color: 'primary.main' }} />
+                    <Typography variant="h6">
+                      {brand.name}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {brand.description || 'Sin descripción'}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+                  <IconButton
+                    onClick={() => handleEdit(brand)}
+                    color="primary"
+                    size="large"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDeleteClick(brand)}
+                    color="error"
+                    size="large"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+      
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16
+        }}
+        onClick={handleCreate}
+      >
+        <AddIcon />
+      </Fab>
+    </Box>
+  );
+
+  // Vista desktop con DataGrid
+  const DesktopView = () => (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">
@@ -156,6 +238,22 @@ const Brands = () => {
           }}
         />
       </Paper>
+    </Box>
+  );
+
+  return (
+    <Box>
+      {/* Header solo en móvil */}
+      {isMobile && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5">
+            Marcas
+          </Typography>
+        </Box>
+      )}
+
+      {/* Vista condicional */}
+      {isMobile ? <MobileView /> : <DesktopView />}
 
       <BrandDialog
         open={dialogOpen}
