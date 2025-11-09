@@ -1,0 +1,3 @@
+# Los iconos se generarán durante el build
+# Por ahora, usa vite.svg como fallback
+
