@@ -48,7 +48,7 @@ import { useSnackbar } from 'notistack';
 import saleService from '../services/saleService';
 import productService from '../services/productService';
 import customerService from '../services/customerService';
-import BarcodeScanner from '../components/common/BarcodeScanner';
+import BarcodeScannerEmbed from '../components/pos/BarcodeScannerEmbed';
 
 const STORAGE_KEY = 'pos_current_sale';
 
@@ -128,8 +128,12 @@ const POS = () => {
   // Agregar producto por código de barras
   const handleBarcodeScan = async (barcode) => {
     try {
-      const response = await productService.getAll({ search: barcode, limit: 1 });
-      const product = response.products?.find(p => p.barcode === barcode);
+      console.log('Buscando producto con código:', barcode);
+      const response = await productService.getAll({ search: barcode, limit: 10, page: 1 });
+      console.log('Respuesta búsqueda por código:', response);
+      
+      const products = response.products || [];
+      const product = products.find(p => p.barcode === barcode);
 
       if (!product) {
         enqueueSnackbar(`Producto con código ${barcode} no encontrado`, { variant: 'warning' });
@@ -142,9 +146,10 @@ const POS = () => {
       }
 
       addToCart(product);
-      setScannerOpen(false);
+      enqueueSnackbar(`"${product.name}" agregado`, { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar('Error al buscar producto', { variant: 'error' });
+      console.error('Error al buscar producto por código:', error);
+      enqueueSnackbar(error.error || error.message || 'Error al buscar producto', { variant: 'error' });
     }
   };
 
@@ -224,10 +229,26 @@ const POS = () => {
 
     setSearchingProducts(true);
     try {
-      const response = await productService.getAll({ search, limit: 20 });
-      setProducts(response.products || []);
+      console.log('Buscando productos con:', search);
+      const response = await productService.getAll({ search, limit: 20, page: 1 });
+      console.log('Respuesta de búsqueda:', response);
+      
+      // Verificar si la respuesta tiene la estructura correcta
+      if (response && response.products) {
+        setProducts(response.products);
+        console.log(`Encontrados ${response.products.length} productos`);
+      } else if (Array.isArray(response)) {
+        // Por si acaso el servicio devuelve directamente el array
+        setProducts(response);
+        console.log(`Encontrados ${response.length} productos (array directo)`);
+      } else {
+        console.warn('Respuesta inesperada:', response);
+        setProducts([]);
+      }
     } catch (error) {
-      enqueueSnackbar('Error al buscar productos', { variant: 'error' });
+      console.error('Error al buscar productos:', error);
+      enqueueSnackbar(error.error || error.message || 'Error al buscar productos', { variant: 'error' });
+      setProducts([]);
     } finally {
       setSearchingProducts(false);
     }
@@ -490,7 +511,7 @@ const POS = () => {
             <Alert severity="info" sx={{ mb: 2 }}>
               Apunta la cámara al código de barras del producto
             </Alert>
-            <BarcodeScanner
+            <BarcodeScannerEmbed
               onScan={handleBarcodeScan}
               onError={(error) => enqueueSnackbar(error, { variant: 'error' })}
             />
