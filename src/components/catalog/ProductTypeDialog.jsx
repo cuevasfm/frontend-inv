@@ -44,8 +44,8 @@ const ProductTypeDialog = ({ open, onClose, onSave, productType }) => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      // Generar slug automáticamente desde el nombre
-      const slug = data.name
+      // Generar code automáticamente desde el nombre
+      const code = data.name
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
@@ -53,7 +53,7 @@ const ProductTypeDialog = ({ open, onClose, onSave, productType }) => {
         .replace(/-+/g, '-') // Eliminar guiones duplicados
         .replace(/^-|-$/g, ''); // Eliminar guiones al inicio/fin
       
-      await onSave({ ...data, slug });
+      await onSave({ ...data, code });
     } catch (error) {
       enqueueSnackbar(
         error.message || 'Error al guardar tipo de producto',
