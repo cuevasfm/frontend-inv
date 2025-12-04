@@ -109,33 +109,14 @@ const ProductTypes = () => {
     {
       field: 'displayOrder',
       headerName: 'Orden',
-      width: 80,
+      width: 100,
       align: 'center'
     },
     {
       field: 'name',
       headerName: 'Nombre',
       flex: 1,
-      minWidth: 150
-    },
-    {
-      field: 'slug',
-      headerName: 'Slug',
-      flex: 1,
-      minWidth: 150,
-      renderCell: (params) => (
-        <Chip 
-          label={params.value} 
-          size="small" 
-          variant="outlined" 
-        />
-      )
-    },
-    {
-      field: 'description',
-      headerName: 'Descripción',
-      flex: 2,
-      minWidth: 250
+      minWidth: 200
     },
     {
       field: 'actions',
@@ -186,30 +167,17 @@ const ProductTypes = () => {
             <Grid item xs={12} sm={6} key={productType.id}>
               <Card>
                 <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" component="div">
                       {productType.name}
                     </Typography>
                     <Chip 
-                      label={`#${productType.displayOrder || 0}`} 
+                      label={`Orden: ${productType.displayOrder || 0}`} 
                       size="small" 
                       color="primary"
                       variant="outlined"
                     />
                   </Box>
-                  
-                  <Chip 
-                    label={productType.slug} 
-                    size="small" 
-                    variant="outlined"
-                    sx={{ mb: 1 }}
-                  />
-
-                  {productType.description && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      {productType.description}
-                    </Typography>
-                  )}
                 </CardContent>
                 <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
                   <Button
