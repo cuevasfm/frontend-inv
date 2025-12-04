@@ -24,8 +24,10 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Clear as ClearIcon,
-  FilterList as FilterIcon
+  FilterList as FilterIcon,
+  FileDownload as FileDownloadIcon
 } from '@mui/icons-material';
+import * as XLSX from 'xlsx';
 import { DataGrid } from '@mui/x-data-grid';
 import { useSnackbar } from 'notistack';
 import productService from '../services/productService';
@@ -65,6 +67,7 @@ const Products = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [existingProduct, setExistingProduct] = useState(null);
   const [deletedProduct, setDeletedProduct] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   // Cargar productos
   const loadProducts = async () => {
@@ -287,6 +290,101 @@ const Products = () => {
     }
   };
 
+  // Exportar productos a Excel
+  const handleExportToExcel = async () => {
+    setExporting(true);
+    try {
+      // Obtener TODOS los productos con los filtros aplicados
+      const params = {
+        page: 1,
+        limit: 10000, // Límite alto para obtener todos
+        search,
+        ...filters
+      };
+
+      enqueueSnackbar('Generando archivo Excel...', { variant: 'info' });
+      const response = await productService.getAll(params);
+      const allProducts = response.data.products || [];
+
+      if (allProducts.length === 0) {
+        enqueueSnackbar('No hay productos para exportar', { variant: 'warning' });
+        return;
+      }
+
+      // Preparar datos para Excel
+      const excelData = allProducts.map(product => ({
+        'Código de Barras': product.barcode || '',
+        'SKU': product.sku || '',
+        'Nombre': product.name || '',
+        'Descripción': product.description || '',
+        'Categoría': product.category?.name || '',
+        'Marca': product.brand?.name || '',
+        'Tipo': product.productType?.name || '',
+        'Unidad': product.unitType?.name || '',
+        'Volumen (ml)': product.volumeMl || '',
+        '% Alcohol': product.alcoholPercentage || '',
+        'Stock': product.currentStock || 0,
+        'Stock Mínimo': product.minStock || 0,
+        'Stock Máximo': product.maxStock || 0,
+        'Punto Reorden': product.reorderPoint || 0,
+        'Precio Menudeo': product.retailPrice || 0,
+        'Precio Mayoreo': product.wholesalePrice || 0,
+        'Cant. Mínima Mayoreo': product.wholesaleMinQuantity || 0,
+        'Estado': product.isActive ? 'Activo' : 'Inactivo'
+      }));
+
+      // Crear libro de Excel
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Ajustar ancho de columnas
+      const columnWidths = [
+        { wch: 15 }, // Código de Barras
+        { wch: 15 }, // SKU
+        { wch: 30 }, // Nombre
+        { wch: 40 }, // Descripción
+        { wch: 15 }, // Categoría
+        { wch: 15 }, // Marca
+        { wch: 12 }, // Tipo
+        { wch: 10 }, // Unidad
+        { wch: 12 }, // Volumen
+        { wch: 10 }, // % Alcohol
+        { wch: 8 },  // Stock
+        { wch: 12 }, // Stock Mínimo
+        { wch: 12 }, // Stock Máximo
+        { wch: 12 }, // Punto Reorden
+        { wch: 15 }, // Precio Menudeo
+        { wch: 15 }, // Precio Mayoreo
+        { wch: 18 }, // Cant. Mínima Mayoreo
+        { wch: 10 }  // Estado
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Productos');
+
+      // Generar nombre de archivo con fecha
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const fileName = `productos_${dateStr}.xlsx`;
+
+      // Descargar archivo
+      XLSX.writeFile(workbook, fileName);
+      
+      enqueueSnackbar(
+        `${allProducts.length} productos exportados exitosamente`, 
+        { variant: 'success' }
+      );
+    } catch (error) {
+      console.error('Error exporting products:', error);
+      enqueueSnackbar(
+        error.response?.data?.message || 'Error al exportar productos',
+        { variant: 'error' }
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Columnas de la tabla
   const columns = [
     {
@@ -395,17 +493,27 @@ const Products = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">
           Productos
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreate}
-        >
-          Nuevo Producto
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportToExcel}
+            disabled={exporting || loading}
+          >
+            {exporting ? 'Exportando...' : 'Exportar Excel'}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreate}
+          >
+            Nuevo Producto
+          </Button>
+        </Box>
       </Box>
 
       <Paper sx={{ p: 2, mb: 2 }}>
