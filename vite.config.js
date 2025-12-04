@@ -52,6 +52,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB (para xlsx y otros bundles grandes)
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/api/products'),
